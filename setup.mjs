@@ -19,34 +19,6 @@ try {
   console.log("oh my zsh already installed")
 }
 
-// Install Node
-const nodePathOrNull = await which("node", { nothrow: true })
-if (!nodePathOrNull) {
-  try {
-    await $`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash`
-    console.log("Node installed")
-  } catch (error) {
-    console.log("Could not install Node")
-    throw error
-  }
-} else {
-  console.log("Node is already installed")
-}
-
-// Install Bun
-const bunPathOrNull = await which("bun", { nothrow: true })
-if (!bunPathOrNull) {
-  try {
-    await $`curl -fsSL https://bun.sh/install | bash`
-    console.log("Bun installed")
-  } catch (error) {
-    console.log("Could not install Bun")
-    throw error
-  }
-} else {
-  console.log("Bun is already installed")
-}
-
 // Install Go
 const goPathOrNull = await which("go", { nothrow: true })
 if (!goPathOrNull) {
