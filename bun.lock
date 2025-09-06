@@ -1,0 +1,13 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "dependencies": {
+        "zx": "^8.8.1",
+      },
+    },
+  },
+  "packages": {
+    "zx": ["zx@8.8.1", "", { "bin": { "zx": "build/cli.js" } }, "sha512-qvsKBnvWHstHKCluKPlEgI/D3+mdiQyMoSSeFR8IX/aXzWIas5A297KxKgPJhuPXdrR6ma0Jzx43+GQ/8sqbrw=="],
+  }
+}
