@@ -15,6 +15,8 @@ try {
   console.log("Could not install Oh My Zsh")
   throw error
 }
+} else {
+  console.log("oh my zsh already installed")
 }
 
 // Install Node
