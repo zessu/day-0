@@ -1,0 +1,1 @@
+To install run `bun run zx ./setup.mjs`
