@@ -131,6 +131,7 @@ if (!nvimPath) {
     await $`sudo rm -rf /opt/nvim`;
     await $`sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz`;
     await $`echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >> ~/.zshrc`;
+    await $`sudo rm -rf nvim-linux-x86_64.tar.g`;
     console.log(chalk.green("nvim installed"));
   } catch (error) {
     console.log(chalk.red("error installing nvim"));
