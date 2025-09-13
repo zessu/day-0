@@ -145,9 +145,25 @@ if (!nvimPath) {
 console.log(chalk.blue("Installing Powerlevel10k theme..."));
 const zshCustom =
   process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
+await $`sudo rm -rf "${zshCustom}/themes/powerlevel10k"`;
 await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${zshCustom}/themes/powerlevel10k"`;
 await $`export ZSH_THEME="powerlevel10k/powerlevel10k" >> ~/.zshrc`;
 console.log(chalk.green("Powerlevel10k installed"));
+
+// install riggrep (needed by Telescop e.t.c)
+const rgPath = await which("rg", { nothrow: true });
+if (!rgPath) {
+  try {
+    console.log(chalk.blue("Installing rigrep"));
+    await $`sudo apt-get install ripgrep`;
+    console.error(chalk.green("ripgrep installed"));
+  } catch (error) {
+    console.log(chalk.red("error installing riggrep"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("nvchad already installed"));
+}
 
 // install nvchad
 const nvchadPath = await which("nvim", { nothrow: true });
@@ -160,7 +176,7 @@ if (!nvchadPath) {
     await $`git clone https://github.com/NvChad/starter ~/.config/nvim && nvim`;
     console.log(chalk.green("nvchad installed"));
   } catch (error) {
-    console.log(chalk.error("error installing nvchad"));
+    console.error(chalk.red("error installing nvchad"));
     throw error;
   }
 } else {
