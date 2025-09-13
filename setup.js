@@ -122,7 +122,7 @@ if (!lazyDockerPath) {
   console.log(chalk.yellow("lazydocker already installed"));
 }
 
-// install nvim
+// install neovim
 const nvimPath = await which("nvim", { nothrow: true });
 if (!nvimPath) {
   try {
@@ -140,6 +140,14 @@ if (!nvimPath) {
 } else {
   console.log(chalk.yellow("nvim already installed"));
 }
+
+// Install Powerlevel10k theme (includes Nerd Fonts support)
+console.log(chalk.blue("Installing Powerlevel10k theme..."));
+const zshCustom =
+  process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
+await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${zshCustom}/themes/powerlevel10k"`;
+await $`export ZSH_THEME="powerlevel10k/powerlevel10k" >> ~/.zshrc`;
+console.log(chalk.green("Powerlevel10k installed"));
 
 // install nvchad
 const nvchadPath = await which("nvim", { nothrow: true });
