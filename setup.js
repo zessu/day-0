@@ -229,3 +229,18 @@ if (!nvmPath) {
 } else {
   console.log(chalk.yellow("nvm(node version manager) already installed"));
 }
+
+// add gemini-cli
+const geminiPath = await which("gemini", { nothrow: true });
+if (!geminiPath) {
+  try {
+    console.log(chalk.blue("Installing gemini cli"));
+    await $`bun add -g @google/gemini-cli`;
+    console.log(chalk.green("gemini cli installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing gemini cli"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("gemini cli already installed"));
+}
