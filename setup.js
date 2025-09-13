@@ -41,6 +41,22 @@ if (!zshPath) {
   console.log(chalk.yellow("oh my zsh already installed"));
 }
 
+// Install Node
+const nodePath = await which("node", { nothrow: true });
+if (!nodePath) {
+  try {
+    console.log(chalk.blue("Installing node-js"));
+    await $`sudo apt install -y nodejs`;
+    console.log(chalk.green("NodeJS installed"));
+  } catch (error) {
+    console.error(chalk.red(error));
+    console.error(chalk.red("Could not install NodeJS"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("Node-Js is already installed"));
+}
+
 // Install Go
 const goPath = await which("go", { nothrow: true });
 if (!goPath) {
@@ -146,7 +162,7 @@ console.log(chalk.blue("Installing Powerlevel10k theme..."));
 const zshCustom =
   process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
 await $`sudo rm -rf "${zshCustom}/themes/powerlevel10k"`;
-await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${zshCustom}/themes/powerlevel10k"`;
+await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${zshCustom}/themes/powerlevel10k" --verbose`;
 await $`export ZSH_THEME="powerlevel10k/powerlevel10k" >> ~/.zshrc`;
 console.log(chalk.green("Powerlevel10k installed"));
 
@@ -181,4 +197,35 @@ if (!nvchadPath) {
   }
 } else {
   console.log(chalk.yellow("nvchad already installed"));
+}
+
+// add tldr pages
+const tldrPath = await which("tldr", { nothrow: true });
+if (!tldrPath) {
+  try {
+    console.log(chalk.blue("Installing tldr pages"));
+    await $`bun add -g tldr`;
+    console.log(chalk.green("tldr pages installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing tldr pages"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("tldr-pages already installed"));
+}
+
+// install nvm
+const nvmPath = await which("nvm", { nothrow: true });
+if (!nvmPath) {
+  try {
+    console.log(chalk.blue("Installing nvm (node version manager)"));
+    await $`PROFILE=~/.zshrc`; // add variable for node's bash script to pick correct shell config -> https://github.com/nvm-sh/nvm#installing-and-updating
+    await $`wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`;
+    console.log(chalk.green("node version manager installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing nvm(node version manager)"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("nvm(node version manager) already installed"));
 }
