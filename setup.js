@@ -1,7 +1,10 @@
+import fs from "fs";
 const { chalk } = require("zx");
 
+// TODO: add links to github packages/documentation on error failed to download
+
 $.defaults = {
-  cwd: process.env.HOME, // downloands dir
+  cwd: process.env.HOME, // downloads dir
   verbose: true,
 };
 
@@ -30,6 +33,7 @@ if (!zshPath) {
     console.log(chalk.blue("Installing oh-my-zish"));
     await $`sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended`;
     await $`sudo chsh -s $(which zsh) $USER`;
+    await $`echo alias reload='source ~/.zshrc' >> ~/.zshrc`;
     console.log(
       chalk.green("✅ Oh My Zsh installed. zsh is now default shell.")
     );
@@ -195,15 +199,19 @@ if (!nvimPath) {
 }
 
 // Install Powerlevel10k theme (includes Nerd Fonts support)
-console.log(chalk.blue("Installing Powerlevel10k theme..."));
 const zshCustom =
   process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
-await $`sudo rm -rf "${zshCustom}/themes/powerlevel10k"`;
-await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${zshCustom}/themes/powerlevel10k" --verbose`;
-await $`export ZSH_THEME="powerlevel10k/powerlevel10k" >> ~/.zshrc`;
-console.log(chalk.green("Powerlevel10k installed"));
+const powerlevel10kFolder = await $`ls "${zshCustom}/themes/powerlevel10k"`; // see if folder already exists before cloning
+if (powerlevel10kFolder.exitCode > 0) {
+  console.log(chalk.blue("Installing Powerlevel10k theme..."));
+  await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${zshCustom}/themes/powerlevel10k" --verbose`;
+  await $`export ZSH_THEME="powerlevel10k/powerlevel10k" >> ~/.zshrc`;
+  console.log(chalk.green("Powerlevel10k installed"));
+} else {
+  console.log(chalk.yellow("powerlevel10k already installed"));
+}
 
-// install riggrep (needed by Telescop e.t.c)
+// install riggrep (needed by Telescope e.t.c)
 const rgPath = await which("rg", { nothrow: true });
 if (!rgPath) {
   try {
@@ -215,7 +223,7 @@ if (!rgPath) {
     throw error;
   }
 } else {
-  console.log(chalk.yellow("nvchad already installed"));
+  console.log(chalk.yellow("rg already installed"));
 }
 
 // install nvchad
@@ -252,20 +260,12 @@ if (!tldrPath) {
 }
 
 // install nvm
-const nvmPath = await which("nvm", { nothrow: true });
-if (!nvmPath) {
-  try {
-    console.log(chalk.blue("Installing nvm (node version manager)"));
-    await $`PROFILE=~/.zshrc`; // add variable for node's bash script to pick correct shell config -> https://github.com/nvm-sh/nvm#installing-and-updating
-    await $`wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`;
-    console.log(chalk.green("node version manager installed"));
-  } catch (error) {
-    console.error(chalk.red("error installing nvm(node version manager)"));
-    throw error;
-  }
-} else {
-  console.log(chalk.yellow("nvm(node version manager) already installed"));
-}
+// NOTE: nvm is added as a shell script to our zshrc as a result it will not be avaiable to bash where zx runs
+// TODO: find solution to check if installed will
+// const nvmInstalled = await $`command -v nvm`; //nvm installed as shell script not executable see https://github.com/nvm-sh/nvm#verify-installation
+console.log(chalk.blue("Installing nvm (node version manager)"));
+await $`PROFILE=~/.zshrc && wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`;
+console.log(chalk.green("node version manager installed"));
 
 // add gemini-cli
 const geminiPath = await which("gemini", { nothrow: true });
@@ -282,6 +282,66 @@ if (!geminiPath) {
   console.log(chalk.yellow("gemini cli already installed"));
 }
 
+// install fd
+const fdPath = await which("fd", { nothrow: true });
+if (!fdPath) {
+  try {
+    console.log(chalk.blue("Installing fd"));
+    await $`sudo apt install fd-find`;
+    await $`ln -s $(which fdfind) ~/.local/bin/fd`;
+    console.log(chalk.green("fd installed"));
+  } catch (error) {
+    console.error(
+      chalk.red("error installing fd view docs https://github.com/sharkdp/fd")
+    );
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("fd already installed"));
+}
+
+// install fzf
+const fzfPath = await which("fzf", { nothrow: true });
+if (!fzfPath) {
+  try {
+    console.log(chalk.blue("Installing fzf"));
+    await $`sudo apt install fzf`;
+    await $`echo 'source <(fzf --zsh)' >> ~/.zshrc`;
+    await $`echo 'export FZF_DEFAULT_COMMAND="fd --type f --color=always"' >> ~/.zshrc`;
+    const alias = `alias fzf='fzf --style full --preview "fzf-preview.sh {}" --bind "focus:transform-header:file --brief {}"'\n`;
+    fs.appendFileSync(process.env.HOME + "/.zshrc", alias);
+    console.log("Alias successfully added to ~/.zshrc");
+    console.log(chalk.green("fzf installed"));
+  } catch (error) {
+    console.error(
+      chalk.red(
+        "error installing fzf view docs https://github.com/junegunn/fzf#installation"
+      )
+    );
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("fzf already installed"));
+}
+
+// install bat
+// const batPath = await which("bat", { nothrow: true });
+// if (!batPath) {
+//   try {
+//     console.log(chalk.blue("Installing bat"));
+//     await $`sudo apt install bat`;
+//     console.log(chalk.green("bat installed"));
+//   } catch (error) {
+//     console.error(chalk.red("error installing bat"));
+//     throw error;
+//   }
+// } else {
+//   console.log(chalk.yellow("bat already installed"));
+// }
+
 // finally source everything
-await $`echo alias reload='source ~/.zshrc' >> ~/.zshrc`;
-await $`source ~/.zshrc`;
+console.log(
+  chalk.green(
+    "Everything has been installed successfully remember to run reload or source ~/.zshrc to source your shell"
+  )
+);
