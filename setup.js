@@ -76,6 +76,27 @@ if (!goPath) {
   console.log(chalk.yellow("Go is already installed"));
 }
 
+// Install zig
+const zigPath = await which("zig", { nothrow: true });
+if (!zigPath) {
+  try {
+    console.log(chalk.blue("Installing zig"));
+    await $`wget -O zig.tar.xz https://ziglang.org/builds/zig-x86_64-linux-0.16.0-dev.233+a0ec4e270.tar.xz`;
+    await $`tar -xJvf zig.tar.xz`;
+    await $`mv zig-x86_64-linux-0.16.0-dev.233+a0ec4e270 zig`;
+    await $`sudo mv zig /usr/local/zig`;
+    await $`sudo rm -rf zig.tar.xz`; // clean up
+    await $`echo 'export PATH=/usr/local/zig:$PATH' >> ~/.zshrc`;
+    console.log(chalk.green("zig installed"));
+  } catch (error) {
+    console.error(chalk.red(error));
+    console.error(chalk.red("Could not install zig"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("zig is already installed"));
+}
+
 // install lazygit
 const lazyGitPath = await which("lazygit", { nothrow: true });
 if (!lazyGitPath) {
@@ -244,3 +265,6 @@ if (!geminiPath) {
 } else {
   console.log(chalk.yellow("gemini cli already installed"));
 }
+
+// finally source everything
+await $`source ~/.zshrc`;
