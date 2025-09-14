@@ -97,6 +97,22 @@ if (!zigPath) {
   console.log(chalk.yellow("zig is already installed"));
 }
 
+// install rust
+const rustPath = await which("cargo", { nothrow: true });
+if (!rustPath) {
+  try {
+    console.log(chalk.blue("Installing rust"));
+    await $`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`;
+    console.log(chalk.green("rust installed"));
+  } catch (error) {
+    console.error(chalk.red(error));
+    console.error(chalk.red("Could not install rust"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("rust is already installed"));
+}
+
 // install lazygit
 const lazyGitPath = await which("lazygit", { nothrow: true });
 if (!lazyGitPath) {
@@ -267,4 +283,5 @@ if (!geminiPath) {
 }
 
 // finally source everything
+await $`echo alias reload='source ~/.zshrc' >> ~/.zshrc`;
 await $`source ~/.zshrc`;
