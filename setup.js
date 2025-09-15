@@ -384,6 +384,21 @@ if (!ohaPath) {
   console.log(chalk.yellow("oha already installed"));
 }
 
+// install hazrlequin
+const harlequinPath = await which("harlequin", { nothrow: true });
+if (!harlequinPath) {
+  try {
+    console.log(chalk.blue("Installing harlequin"));
+    await $`curl -LsSf https://astral.sh/uv/install.sh | sh`;
+    console.log(chalk.green("harlequin installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing harlequin"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("harlequin already installed"));
+}
+
 // finally source everything
 console.log(chalk.green("Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
