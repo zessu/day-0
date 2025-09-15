@@ -384,12 +384,12 @@ if (!ohaPath) {
   console.log(chalk.yellow("oha already installed"));
 }
 
-// install hazrlequin
+// install harlequin
 const harlequinPath = await which("harlequin", { nothrow: true });
 if (!harlequinPath) {
   try {
     console.log(chalk.blue("Installing harlequin"));
-    await $`curl -LsSf https://astral.sh/uv/install.sh | sh`;
+    await $`uv tool install harlequin`;
     console.log(chalk.green("harlequin installed"));
   } catch (error) {
     console.error(chalk.red("error installing harlequin"));
@@ -399,7 +399,21 @@ if (!harlequinPath) {
   console.log(chalk.yellow("harlequin already installed"));
 }
 
-// finally source everything
+// install btop
+const btopPath = await which("btop", { nothrow: true });
+if (!btopPath) {
+  try {
+    console.log(chalk.blue("Installing btop"));
+    await $`sudo apt install btop`;
+    console.log(chalk.green("btop installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing btop"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("btop already installed"));
+}
+
 console.log(chalk.green("Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
