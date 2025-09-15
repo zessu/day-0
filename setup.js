@@ -308,9 +308,8 @@ if (!fzfPath) {
     await $`sudo apt install fzf`;
     await $`echo 'source <(fzf --zsh)' >> ~/.zshrc`;
     await $`echo 'export FZF_DEFAULT_COMMAND="fd --type f --color=always"' >> ~/.zshrc`;
-    const alias = `alias fzf='fzf --style full --preview "fzf-preview.sh {}" --bind "focus:transform-header:file --brief {}"'\n`;
-    fs.appendFileSync(process.env.HOME + "/.zshrc", alias);
-    console.log("Alias successfully added to ~/.zshrc");
+    const fzfOptions = `export FZF_DEFAULT_OPTS="--style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"`;
+    fs.appendFileSync(process.env.HOME + "/.zshrc", fzfOptions);
     console.log(chalk.green("fzf installed"));
   } catch (error) {
     console.error(
@@ -325,23 +324,28 @@ if (!fzfPath) {
 }
 
 // install bat
-// const batPath = await which("bat", { nothrow: true });
-// if (!batPath) {
-//   try {
-//     console.log(chalk.blue("Installing bat"));
-//     await $`sudo apt install bat`;
-//     console.log(chalk.green("bat installed"));
-//   } catch (error) {
-//     console.error(chalk.red("error installing bat"));
-//     throw error;
-//   }
-// } else {
-//   console.log(chalk.yellow("bat already installed"));
-// }
+const batPath = await which("bat", { nothrow: true });
+if (!batPath) {
+  try {
+    console.log(chalk.blue("Installing bat"));
+    await $`sudo apt install bat -y`;
+    await $`ln -s /usr/bin/batcat ~/.local/bin/bat`;
+    console.log(chalk.green("bat installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing bat"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("bat already installed"));
+}
 
 // finally source everything
-console.log(
-  chalk.green(
-    "Everything has been installed successfully remember to run reload or source ~/.zshrc to source your shell"
-  )
-);
+console.log(chalk.green("Everything has been installed successfully"));
+console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
+console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
+console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
+console.log(chalk.blue("run the following commands to finish install"));
+console.log(chalk.blue("1. source ~/.zshrc"));
+console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
+console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
+console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
