@@ -339,6 +339,51 @@ if (!batPath) {
   console.log(chalk.yellow("bat already installed"));
 }
 
+// install uv
+const uvPath = await which("uv", { nothrow: true });
+if (!uvPath) {
+  try {
+    console.log(chalk.blue("Installing uv"));
+    await $`curl -LsSf https://astral.sh/uv/install.sh | sh`;
+    console.log(chalk.green("uv installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing uv"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("uv already installed"));
+}
+
+// install posting
+const postingPath = await which("posting", { nothrow: true });
+if (!postingPath) {
+  try {
+    console.log(chalk.blue("Installing posting"));
+    await $`uv tool install --python 3.13 posting`;
+    console.log(chalk.green("posting installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing posting"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("posting already installed"));
+}
+
+// install oha
+const ohaPath = await which("oha", { nothrow: true });
+if (!ohaPath) {
+  try {
+    console.log(chalk.blue("Installing oha"));
+    await $`cargo install oha`;
+    console.log(chalk.green("oha installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing oha"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("oha already installed"));
+}
+
 // finally source everything
 console.log(chalk.green("Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
