@@ -492,6 +492,22 @@ if (!yaziPath) {
   console.log(chalk.yellow("yazi already installed"));
 }
 
+// install yazi
+const ezaPath = await which("eza", { nothrow: true });
+if (!ezaPath) {
+  try {
+    console.log(chalk.blue("Installing eza"));
+    await $`sudo apt install eza`;
+    await $`echo 'alias ls="eza -1la"' >> ~/.zshrc`;
+    console.log(chalk.green("eza installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing eza"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("eza already installed"));
+}
+
 console.log(chalk.green("Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
