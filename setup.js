@@ -518,15 +518,19 @@ console.log(chalk.green("🎉 Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
-console.log(chalk.blue("📌 Run the following commands to finish setup:"));
-console.log(chalk.blue("1️⃣  source ~/.zshrc"));
-console.log(chalk.blue("2️⃣  sudo apt update")); // Fixed typo: was "w."
-console.log(chalk.blue("3️⃣  sudo apt upgrade"));
 console.log(
-  chalk.blue(
-    "4️⃣  Add to ~/.zshrc: plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete)"
+  chalk.cyanBright(
+    "✨ Please CLOSE and REOPEN your terminal and run the following commands for all changes to take effect!"
   )
 );
+console.log(chalk.blue("1️⃣  source ~/.zshrc"));
+console.log(
+  chalk.blue(
+    "2️⃣Add to ~/.zshrc: plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete)"
+  )
+);
+console.log(chalk.blue("3️⃣sudo apt update")); // Fixed typo: was "w."
+console.log(chalk.blue("4️⃣  sudo apt upgrade"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
