@@ -1,22 +1,81 @@
 import fs from "fs";
-const { chalk } = require("zx");
+import { $, which, chalk } from "zx"; // Import `which` from zx
 
-// TODO: add links to github packages/documentation on error failed to download
+// --- OS DETECTION ---
+async function detectOS() {
+  try {
+    const { stdout: osRelease } = await $`cat /etc/os-release`;
+    if (osRelease.includes("ID=arch") || osRelease.includes("ID_LIKE=arch")) {
+      return "arch";
+    } else if (
+      osRelease.includes("ID=debian") ||
+      osRelease.includes("ID=ubuntu") ||
+      osRelease.includes("ID_LIKE=debian")
+    ) {
+      return "debian";
+    } else {
+      throw new Error(
+        "Unsupported distribution. Only Debian and Arch are supported."
+      );
+    }
+  } catch (error) {
+    console.error(chalk.red("❌ Could not detect operating system."));
+    throw error;
+  }
+}
 
+const osType = await detectOS();
+const isDebian = osType === "debian";
+const isArch = osType === "arch";
+
+console.log(chalk.green(`🚀 Detected OS: ${osType}`));
+
+// --- PACKAGE MANAGER ABSTRACTION ---
+/**
+ * Returns command and args for installing packages based on OS.
+ * @param {string[]} packages - Array of package names
+ * @returns {{ cmd: string, args: string[] }}
+ */
+function getPackageManagerCommand(packages) {
+  if (isDebian) {
+    return {
+      cmd: "sudo",
+      args: ["apt", "install", "-y", ...packages],
+    };
+  } else if (isArch) {
+    return {
+      cmd: "sudo",
+      args: ["pacman", "-S", "--noconfirm", ...packages],
+    };
+  } else {
+    throw new Error("Unsupported OS in package manager function.");
+  }
+}
+
+// --- GLOBAL CONFIG ---
 $.defaults = {
-  cwd: process.env.HOME, // downloads dir
-  verbose: true,
+  cwd: process.env.HOME,
 };
 
-console.log(chalk.green("🚀 Setting up linux terminal tools"));
-await $`sudo apt-get update`;
+$.quiet = false;
+$.verbose = true;
 
-// Install Oh My Zsh and set as default shell
+// --- START INSTALLATION ---
+console.log(chalk.green("🚀 Setting up linux terminal tools"));
+
+// Initial update for Debian
+if (isDebian) {
+  await $`sudo apt-get update`;
+}
+
+// --- BUILD ESSENTIALS ---
 const buildEssentials = await which("gcc", { nothrow: true });
 if (!buildEssentials) {
   try {
-    console.log(chalk.blue("🔧 Installing build-essentials"));
-    await $`sudo apt install -y build-essential`;
+    console.log(chalk.blue("🔧 Installing build essentials"));
+    const pkgs = isDebian ? ["build-essential"] : ["base-devel"];
+    const { cmd, args } = getPackageManagerCommand(pkgs);
+    await $`${cmd} ${args}`;
     console.log(chalk.green("✅ gcc, clang installed."));
   } catch (error) {
     console.error(chalk.red("❌ Could not install build essentials"));
@@ -26,22 +85,29 @@ if (!buildEssentials) {
   console.log(chalk.yellow("⚠️  build essentials already installed"));
 }
 
-// Install Oh My Zsh and set as default shell
-const zshPath = await which("zsh", { nothrow: true }); // Fixed typo: was "zssh"
+// --- OH MY ZSH ---
+const zshPath = await which("zsh", { nothrow: true });
 if (!zshPath) {
   try {
-    console.log(chalk.blue("🦄 Installing oh-my-zsh")); // Fixed typo: was "oh-my-zish"
-    await $`sudo apt install zsh-autosuggestions zsh-syntax-highlighting zsh`;
+    console.log(chalk.blue("🦄 Installing oh-my-zsh"));
+
+    const zshPkgs = ["zsh", "zsh-autosuggestions", "zsh-syntax-highlighting"];
+    const { cmd, args } = getPackageManagerCommand(zshPkgs);
+    await $`${cmd} ${args}`;
+
     await $`sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended`;
     await $`sudo chsh -s $(which zsh) $USER`;
-    await $`echo alias reload="source ~/.zshrc" >> ~/.zshrc`;
-    await $`git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM/plugins/zsh-autosuggestions`;
-    await $`git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting`;
-    const zshCustom = `${
-      process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`
-    }`;
+    await $`echo 'alias reload="source ~/.zshrc"' >> ~/.zshrc`;
+
+    const zshCustom =
+      process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
+    await $`mkdir -p '${zshCustom}/plugins'`;
+
+    await $`git clone https://github.com/zsh-users/zsh-autosuggestions.git '${zshCustom}/plugins/zsh-autosuggestions'`;
+    await $`git clone https://github.com/zsh-users/zsh-syntax-highlighting.git '${zshCustom}/plugins/zsh-syntax-highlighting'`;
+    await $`git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git '${zshCustom}/plugins/zsh-autocomplete'`;
     await $`git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git '${zshCustom}/plugins/fast-syntax-highlighting'`;
-    await $`git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM/plugins/zsh-autocomplete`;
+
     console.log(
       chalk.green("✅ Oh My Zsh installed. zsh is now default shell.")
     );
@@ -53,30 +119,32 @@ if (!zshPath) {
   console.log(chalk.yellow("⚠️  oh my zsh already installed"));
 }
 
-// Install Node
+// --- NODE.JS ---
 const nodePath = await which("node", { nothrow: true });
 if (!nodePath) {
   try {
     console.log(chalk.blue("🟢 Installing Node.js"));
-    await $`sudo apt install -y nodejs`;
+    const nodePkgs = isDebian ? ["nodejs"] : ["nodejs", "npm"];
+    const { cmd, args } = getPackageManagerCommand(nodePkgs);
+    await $`${cmd} ${args}`;
     console.log(chalk.green("✅ NodeJS installed"));
   } catch (error) {
     console.error(chalk.red("❌ Could not install NodeJS"));
     throw error;
   }
 } else {
-  console.log(chalk.yellow("⚠️  Node-Js is already installed"));
+  console.log(chalk.yellow("⚠️  Node.js is already installed"));
 }
 
-// Install Go
+// --- GO ---
 const goPath = await which("go", { nothrow: true });
 if (!goPath) {
   try {
     console.log(chalk.blue("🐹 Installing Go lang"));
     await $`wget https://dl.google.com/go/go1.25.1.linux-amd64.tar.gz`;
     await $`sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.25.1.linux-amd64.tar.gz`;
-    await $`rm go1.25.1.linux-amd64.tar.gz`; // Clean up
-    await $`echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc`; // Persist PATH
+    await $`rm go1.25.1.linux-amd64.tar.gz`;
+    await $`echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc`;
     console.log(chalk.green("✅ Go installed"));
   } catch (error) {
     console.error(chalk.red("❌ Could not install Go"));
@@ -86,7 +154,7 @@ if (!goPath) {
   console.log(chalk.yellow("⚠️  Go is already installed"));
 }
 
-// Install zig
+// --- ZIG ---
 const zigPath = await which("zig", { nothrow: true });
 if (!zigPath) {
   try {
@@ -95,7 +163,7 @@ if (!zigPath) {
     await $`tar -xJvf zig.tar.xz`;
     await $`mv zig-x86_64-linux-0.16.0-dev.233+a0ec4e270 zig`;
     await $`sudo mv zig /usr/local/zig`;
-    await $`sudo rm -rf zig.tar.xz`; // clean up
+    await $`sudo rm -rf zig.tar.xz`;
     await $`echo 'export PATH=/usr/local/zig:$PATH' >> ~/.zshrc`;
     console.log(chalk.green("✅ Zig installed"));
   } catch (error) {
@@ -106,7 +174,7 @@ if (!zigPath) {
   console.log(chalk.yellow("⚠️  Zig is already installed"));
 }
 
-// install rust
+// --- RUST ---
 const rustPath = await which("cargo", { nothrow: true });
 if (!rustPath) {
   try {
@@ -121,12 +189,13 @@ if (!rustPath) {
   console.log(chalk.yellow("⚠️  Rust is already installed"));
 }
 
-// install lazygit
+// --- LAZYGIT ---
 const lazyGitPath = await which("lazygit", { nothrow: true });
 if (!lazyGitPath) {
   try {
     console.log(chalk.blue("🐙 Installing Lazygit"));
-    await $`sudo apt install lazygit`;
+    const { cmd, args } = getPackageManagerCommand(["lazygit"]);
+    await $`${cmd} ${args}`;
     console.log(chalk.green("✅ Lazygit installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing Lazygit"));
@@ -136,34 +205,50 @@ if (!lazyGitPath) {
   console.log(chalk.yellow("⚠️  Lazygit already installed"));
 }
 
-// Install Docker
+// --- DOCKER ---
 const dockerPath = await which("docker", { nothrow: true });
 if (!dockerPath) {
   try {
     console.log(chalk.blue("🐳 Installing Docker"));
-    // Install prerequisites
-    await $`sudo apt-get update`;
-    await $`sudo apt-get install -y ca-certificates curl`;
 
-    // Add Docker's GPG key
-    await $`sudo install -m 0755 -d /etc/apt/keyrings`;
-    await $`sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc`;
-    await $`sudo chmod a+r /etc/apt/keyrings/docker.asc`;
+    if (isDebian) {
+      // Debian-specific setup
+      await $`sudo apt-get update`;
+      const prereqPkgs = ["ca-certificates", "curl"];
+      const { cmd, args } = getPackageManagerCommand(prereqPkgs);
+      await $`${cmd} ${args}`;
 
-    // Add Docker's APT repository
-    const { stdout: arch } = await $`dpkg --print-architecture`;
-    const codename = "bookworm";
-    const repoLine = `deb [arch=${arch.trim()} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian ${codename} stable`;
-    await $`echo ${repoLine} | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`;
-    await $`sudo apt-get update`;
+      await $`sudo install -m 0755 -d /etc/apt/keyrings`;
+      await $`sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc`;
+      await $`sudo chmod a+r /etc/apt/keyrings/docker.asc`;
 
-    // Update package index and install Docker
-    await $`sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`;
+      const { stdout: arch } = await $`dpkg --print-architecture`;
+      const { stdout: codename } = await $`lsb_release -cs`;
+      const repoLine = `deb [arch=${arch.trim()} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian ${codename.trim()} stable`;
+      await $`echo ${repoLine} | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`;
+      await $`sudo apt-get update`;
+
+      const dockerPkgs = [
+        "docker-ce",
+        "docker-ce-cli",
+        "containerd.io",
+        "docker-buildx-plugin",
+        "docker-compose-plugin",
+      ];
+      const installCmd = getPackageManagerCommand(dockerPkgs);
+      await $`${installCmd.cmd} ${installCmd.args}`;
+    } else if (isArch) {
+      // Arch: Docker is in community repo
+      await $`sudo pacman -Syu --noconfirm docker docker-compose`;
+      await $`sudo systemctl enable docker.service`;
+      await $`sudo systemctl start docker.service`;
+    }
+
     console.log(chalk.green("✅ Docker installed"));
   } catch (error) {
     console.log(
       chalk.red("❌ Error installing Docker:"),
-      error.stderr || error
+      error.stderr || error.message
     );
     throw error;
   }
@@ -171,7 +256,7 @@ if (!dockerPath) {
   console.log(chalk.yellow("⚠️  Docker already installed"));
 }
 
-// install lazydocker
+// --- LAZYDOCKER ---
 const lazyDockerPath = await which("lazydocker", { nothrow: true });
 if (!lazyDockerPath) {
   try {
@@ -186,16 +271,24 @@ if (!lazyDockerPath) {
   console.log(chalk.yellow("⚠️  Lazydocker already installed"));
 }
 
-// install neovim
+// --- NEOVIM ---
 const nvimPath = await which("nvim", { nothrow: true });
 if (!nvimPath) {
   try {
     console.log(chalk.blue("📝 Installing Neovim"));
-    await $`wget -O nvim-linux-x86_64.tar.gz https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz`;
-    await $`sudo rm -rf /opt/nvim`;
-    await $`sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz`;
-    await $`echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >> ~/.zshrc`;
-    await $`sudo rm -rf nvim-linux-x86_64.tar.gz`; // Fixed typo: was .tar.g
+
+    if (isDebian || isArch) {
+      const { cmd, args } = getPackageManagerCommand(["neovim"]);
+      await $`${cmd} ${args}`;
+    } else {
+      // Fallback: download binary
+      await $`wget -O nvim-linux-x86_64.tar.gz https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz`;
+      await $`sudo rm -rf /opt/nvim`;
+      await $`sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz`;
+      await $`echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >> ~/.zshrc`;
+      await $`rm -rf nvim-linux-x86_64.tar.gz`;
+    }
+
     console.log(chalk.green("✅ Neovim installed"));
   } catch (error) {
     console.log(chalk.red("❌ Error installing Neovim"));
@@ -205,26 +298,28 @@ if (!nvimPath) {
   console.log(chalk.yellow("⚠️  Neovim already installed"));
 }
 
-// Install Powerlevel10k theme (includes Nerd Fonts support)
-const zshCustom =
+// --- POWERLEVEL10K ---
+const zshCustomDir =
   process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
-const powerlevel10kFolder = await $`ls "${zshCustom}/themes/powerlevel10k"`; // see if folder already exists before cloning
-if (powerlevel10kFolder.exitCode > 0) {
+const powerlevel10kPath = `${zshCustomDir}/themes/powerlevel10k`;
+
+if (!fs.existsSync(powerlevel10kPath)) {
   console.log(chalk.blue("🎨 Installing Powerlevel10k theme..."));
-  await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${zshCustom}/themes/powerlevel10k" --verbose`;
-  await $`echo 'export ZSH_THEME="powerlevel10k/powerlevel10k"' >> ~/.zshrc`; // Fixed: was export without echo
+  await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git '${powerlevel10kPath}'`;
+  await $`echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> ~/.zshrc`;
   console.log(chalk.green("✅ Powerlevel10k installed"));
 } else {
   console.log(chalk.yellow("⚠️  Powerlevel10k already installed"));
 }
 
-// install ripgrep (needed by Telescope e.t.c)
+// --- RIPGREP ---
 const rgPath = await which("rg", { nothrow: true });
 if (!rgPath) {
   try {
-    console.log(chalk.blue("🔍 Installing ripgrep")); // Fixed typo: was "rigrep"
-    await $`sudo apt-get install ripgrep`;
-    console.log(chalk.green("✅ ripgrep installed")); // Fixed: was console.error
+    console.log(chalk.blue("🔍 Installing ripgrep"));
+    const { cmd, args } = getPackageManagerCommand(["ripgrep"]);
+    await $`${cmd} ${args}`;
+    console.log(chalk.green("✅ ripgrep installed"));
   } catch (error) {
     console.log(chalk.red("❌ Error installing ripgrep"));
     throw error;
@@ -233,16 +328,17 @@ if (!rgPath) {
   console.log(chalk.yellow("⚠️  rg already installed"));
 }
 
-// install nvchad
-const nvchadConfigPath = `${process.env.HOME}/.config/nvim`; // Check config folder instead of binary
+// --- NVCHAD ---
+const nvchadConfigPath = `${process.env.HOME}/.config/nvim`;
 if (!fs.existsSync(nvchadConfigPath)) {
   try {
     console.log(chalk.blue("⚡ Installing NvChad"));
-    await $`rm -rf ~/.config/nvim`;
-    await $`rm -rf ~/.local/state/nvim`;
-    await $`rm -rf ~/.local/share/nvim`;
-    await $`git clone https://github.com/NvChad/starter ~/.config/nvim && nvim`;
-    console.log(chalk.green("✅ NvChad installed"));
+    await $`rm -rf ~/.config/nvim ~/.local/state/nvim ~/.local/share/nvim`;
+    await $`git clone https://github.com/NvChad/starter ~/.config/nvim`;
+    // Note: Running `nvim` here will hang — better to instruct user to run it manually
+    console.log(
+      chalk.green("✅ NvChad config installed. Run 'nvim' to complete setup.")
+    );
   } catch (error) {
     console.error(chalk.red("❌ Error installing NvChad"));
     throw error;
@@ -251,7 +347,7 @@ if (!fs.existsSync(nvchadConfigPath)) {
   console.log(chalk.yellow("⚠️  NvChad already installed"));
 }
 
-// add tldr pages
+// --- TLDR ---
 const tldrPath = await which("tldr", { nothrow: true });
 if (!tldrPath) {
   try {
@@ -266,12 +362,12 @@ if (!tldrPath) {
   console.log(chalk.yellow("⚠️  tldr-pages already installed"));
 }
 
-// install nvm
+// --- NVM ---
 console.log(chalk.blue("📦 Installing nvm (Node Version Manager)"));
 await $`PROFILE=~/.zshrc && wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`;
 console.log(chalk.green("✅ Node Version Manager installed"));
 
-// add gemini-cli
+// --- GEMINI CLI ---
 const geminiPath = await which("gemini", { nothrow: true });
 if (!geminiPath) {
   try {
@@ -286,13 +382,17 @@ if (!geminiPath) {
   console.log(chalk.yellow("⚠️  Gemini CLI already installed"));
 }
 
-// install fd
+// --- FD ---
 const fdPath = await which("fd", { nothrow: true });
 if (!fdPath) {
   try {
     console.log(chalk.blue("📁 Installing fd"));
-    await $`sudo apt install fd-find`;
-    await $`ln -s $(which fdfind) ~/.local/bin/fd`;
+    if (isDebian) {
+      await $`sudo apt install -y fd-find`;
+      await $`ln -sf $(which fdfind) ~/.local/bin/fd`;
+    } else if (isArch) {
+      await $`sudo pacman -S --noconfirm fd`;
+    }
     console.log(chalk.green("✅ fd installed"));
   } catch (error) {
     console.error(
@@ -306,12 +406,13 @@ if (!fdPath) {
   console.log(chalk.yellow("⚠️  fd already installed"));
 }
 
-// install fzf
+// --- FZF ---
 const fzfPath = await which("fzf", { nothrow: true });
 if (!fzfPath) {
   try {
     console.log(chalk.blue("🔎 Installing fzf"));
-    await $`sudo apt install fzf`;
+    const { cmd, args } = getPackageManagerCommand(["fzf"]);
+    await $`${cmd} ${args}`;
     await $`echo 'source <(fzf --zsh)' >> ~/.zshrc`;
     await $`echo 'export FZF_DEFAULT_COMMAND="fd --type f --color=always"' >> ~/.zshrc`;
     const fzfOptions = `export FZF_DEFAULT_OPTS="--style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"\n`;
@@ -329,13 +430,17 @@ if (!fzfPath) {
   console.log(chalk.yellow("⚠️  fzf already installed"));
 }
 
-// install bat
+// --- BAT ---
 const batPath = await which("bat", { nothrow: true });
 if (!batPath) {
   try {
     console.log(chalk.blue("📓 Installing bat"));
-    await $`sudo apt install bat -y`;
-    await $`ln -s /usr/bin/batcat ~/.local/bin/bat`;
+    if (isDebian) {
+      await $`sudo apt install -y bat`;
+      await $`ln -sf /usr/bin/batcat ~/.local/bin/bat`;
+    } else if (isArch) {
+      await $`sudo pacman -S --noconfirm bat`;
+    }
     console.log(chalk.green("✅ bat installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing bat"));
@@ -345,7 +450,7 @@ if (!batPath) {
   console.log(chalk.yellow("⚠️  bat already installed"));
 }
 
-// install uv
+// --- UV ---
 const uvPath = await which("uv", { nothrow: true });
 if (!uvPath) {
   try {
@@ -360,7 +465,7 @@ if (!uvPath) {
   console.log(chalk.yellow("⚠️  uv already installed"));
 }
 
-// install posting
+// --- POSTING ---
 const postingPath = await which("posting", { nothrow: true });
 if (!postingPath) {
   try {
@@ -375,7 +480,7 @@ if (!postingPath) {
   console.log(chalk.yellow("⚠️  Posting already installed"));
 }
 
-// install oha
+// --- OHA ---
 const ohaPath = await which("oha", { nothrow: true });
 if (!ohaPath) {
   try {
@@ -390,7 +495,7 @@ if (!ohaPath) {
   console.log(chalk.yellow("⚠️  oha already installed"));
 }
 
-// install harlequin
+// --- HARLEQUIN ---
 const harlequinPath = await which("harlequin", { nothrow: true });
 if (!harlequinPath) {
   try {
@@ -405,12 +510,13 @@ if (!harlequinPath) {
   console.log(chalk.yellow("⚠️  Harlequin already installed"));
 }
 
-// install btop
+// --- BTOP ---
 const btopPath = await which("btop", { nothrow: true });
 if (!btopPath) {
   try {
     console.log(chalk.blue("📊 Installing btop"));
-    await $`sudo apt install btop`;
+    const { cmd, args } = getPackageManagerCommand(["btop"]);
+    await $`${cmd} ${args}`;
     console.log(chalk.green("✅ btop installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing btop"));
@@ -420,8 +526,8 @@ if (!btopPath) {
   console.log(chalk.yellow("⚠️  btop already installed"));
 }
 
-// install zoxide
-const zoxidePath = await which("zoxide", { nothrow: true }); // Fixed typo: was "zoxiedPath"
+// --- ZOXIDE ---
+const zoxidePath = await which("zoxide", { nothrow: true });
 if (!zoxidePath) {
   try {
     console.log(chalk.blue("🌀 Installing zoxide"));
@@ -436,12 +542,13 @@ if (!zoxidePath) {
   console.log(chalk.yellow("⚠️  zoxide already installed"));
 }
 
-// install jq
+// --- JQ ---
 const jqPath = await which("jq", { nothrow: true });
 if (!jqPath) {
   try {
     console.log(chalk.blue("🧩 Installing jq"));
-    await $`sudo apt install jq -y`;
+    const { cmd, args } = getPackageManagerCommand(["jq"]);
+    await $`${cmd} ${args}`;
     console.log(chalk.green("✅ jq installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing jq"));
@@ -451,12 +558,13 @@ if (!jqPath) {
   console.log(chalk.yellow("⚠️  jq already installed"));
 }
 
-// install ffmpeg
+// --- FFMPEG ---
 const ffmpegPath = await which("ffmpeg", { nothrow: true });
 if (!ffmpegPath) {
   try {
     console.log(chalk.blue("🎬 Installing ffmpeg"));
-    await $`sudo apt install ffmpeg -y`;
+    const { cmd, args } = getPackageManagerCommand(["ffmpeg"]);
+    await $`${cmd} ${args}`;
     console.log(chalk.green("✅ ffmpeg installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing ffmpeg"));
@@ -466,12 +574,16 @@ if (!ffmpegPath) {
   console.log(chalk.yellow("⚠️  ffmpeg already installed"));
 }
 
-// install imagemagick
+// --- IMAGEMAGICK ---
 const magickPath = await which("magick", { nothrow: true });
 if (!magickPath) {
   try {
     console.log(chalk.blue("🖼️  Installing ImageMagick"));
-    await $`sudo apt install 7zip poppler-utils fd-find imagemagick -y`;
+    const pkgs = isDebian
+      ? ["imagemagick", "7zip", "poppler-utils", "fd-find"]
+      : ["imagemagick", "p7zip", "poppler", "fd"];
+    const { cmd, args } = getPackageManagerCommand(pkgs);
+    await $`${cmd} ${args}`;
     console.log(chalk.green("✅ ImageMagick installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing ImageMagick"));
@@ -481,12 +593,16 @@ if (!magickPath) {
   console.log(chalk.yellow("⚠️  ImageMagick already installed"));
 }
 
-// install yazi
+// --- YAZI ---
 const yaziPath = await which("yazi", { nothrow: true });
 if (!yaziPath) {
   try {
     console.log(chalk.blue("📁 Installing Yazi"));
-    await $`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`;
+    // Ensure rust is installed first
+    if (!(await which("cargo", { nothrow: true }))) {
+      console.log(chalk.yellow("⚠️  Installing Rust first..."));
+      await $`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`;
+    }
     await $`rustup update`;
     await $`cargo install --force yazi`;
     console.log(chalk.green("✅ Yazi installed"));
@@ -498,12 +614,13 @@ if (!yaziPath) {
   console.log(chalk.yellow("⚠️  Yazi already installed"));
 }
 
-// install eza
+// --- EZA ---
 const ezaPath = await which("eza", { nothrow: true });
 if (!ezaPath) {
   try {
     console.log(chalk.blue("📋 Installing eza"));
-    await $`sudo apt install eza`;
+    const { cmd, args } = getPackageManagerCommand(["eza"]);
+    await $`${cmd} ${args}`;
     await $`echo 'alias ls="eza -1la"' >> ~/.zshrc`;
     console.log(chalk.green("✅ eza installed"));
   } catch (error) {
@@ -514,23 +631,20 @@ if (!ezaPath) {
   console.log(chalk.yellow("⚠️  eza already installed"));
 }
 
+// --- FINAL MESSAGE ---
 console.log(chalk.green("🎉 Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
-console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
-console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
-console.log(
-  chalk.cyanBright(
-    "✨ Please CLOSE and REOPEN your terminal and run the following commands for all changes to take effect!"
-  )
-);
+console.log(chalk.cyanBright("✨ PLEASE CLOSE AND REOPEN YOUR TERMINAL!"));
+console.log(chalk.blue("Then run:"));
 console.log(chalk.blue("1️⃣  source ~/.zshrc"));
+if (isDebian) {
+  console.log(chalk.blue("2️⃣  sudo apt update && sudo apt upgrade"));
+} else if (isArch) {
+  console.log(chalk.blue("2️⃣  sudo pacman -Syu"));
+}
 console.log(
   chalk.blue(
-    "2️⃣Add to ~/.zshrc: plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete)"
+    "3️⃣  Add to ~/.zshrc: plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete)"
   )
 );
-console.log(chalk.blue("3️⃣sudo apt update")); // Fixed typo: was "w."
-console.log(chalk.blue("4️⃣  sudo apt upgrade"));
-console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
-console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
