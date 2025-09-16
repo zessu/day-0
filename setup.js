@@ -308,7 +308,7 @@ if (!fzfPath) {
     await $`sudo apt install fzf`;
     await $`echo 'source <(fzf --zsh)' >> ~/.zshrc`;
     await $`echo 'export FZF_DEFAULT_COMMAND="fd --type f --color=always"' >> ~/.zshrc`;
-    const fzfOptions = `export FZF_DEFAULT_OPTS="--style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"`;
+    const fzfOptions = `export FZF_DEFAULT_OPTS="--style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"\n`;
     fs.appendFileSync(process.env.HOME + "/.zshrc", fzfOptions);
     console.log(chalk.green("fzf installed"));
   } catch (error) {
@@ -408,6 +408,22 @@ if (!btopPath) {
     console.log(chalk.green("btop installed"));
   } catch (error) {
     console.error(chalk.red("error installing btop"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("btop already installed"));
+}
+
+// install zoxide
+const zoxiedPath = await which("z", { nothrow: true });
+if (!zoxiedPath) {
+  try {
+    console.log(chalk.blue("Installing zoxide"));
+    await $`curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh`;
+    await $`echo 'eval "$(zoxide init zsh)"' >> ~/.zshrc`;
+    console.log(chalk.green("zoxide installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing zoxide"));
     throw error;
   }
 } else {
