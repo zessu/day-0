@@ -427,7 +427,7 @@ if (!zoxiedPath) {
     throw error;
   }
 } else {
-  console.log(chalk.yellow("z already installed"));
+  console.log(chalk.yellow("zoxide already installed"));
 }
 
 // install jq
@@ -438,11 +438,41 @@ if (!jqPath) {
     await $`sudo apt install jq -y`;
     console.log(chalk.green("jq installed"));
   } catch (error) {
-    console.error(chalk.red("error installing zojqxide"));
+    console.error(chalk.red("error installing jq"));
     throw error;
   }
 } else {
   console.log(chalk.yellow("jq already installed"));
+}
+
+// install ffmpeg
+const ffmpegPath = await which("ffmpeg", { nothrow: true });
+if (!ffmpegPath) {
+  try {
+    console.log(chalk.blue("Installing ffmpeg"));
+    await $`sudo apt install ffmpeg -y`;
+    console.log(chalk.green("ffmpeg installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing ffmpeg"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("ffmpeg already installed"));
+}
+
+// install yazi
+const yaziPath = await which("yazi", { nothrow: true });
+if (!ffmpegPath) {
+  try {
+    console.log(chalk.blue("Installing yazi"));
+    await $`sudo apt install 7zip poppler-utils fd-find imagemagick -y`;
+    console.log(chalk.green("yazi installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing yazi"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("yazi already installed"));
 }
 
 console.log(chalk.green("Everything has been installed successfully"));
@@ -451,6 +481,8 @@ console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.blue("run the following commands to finish install"));
 console.log(chalk.blue("1. source ~/.zshrc"));
+console.log(chalk.blue("w. sudo apt update"));
+console.log(chalk.blue("3. sudo apt upgrade"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
