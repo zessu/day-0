@@ -33,7 +33,7 @@ if (!zshPath) {
     console.log(chalk.blue("Installing oh-my-zish"));
     await $`sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended`;
     await $`sudo chsh -s $(which zsh) $USER`;
-    await $`echo alias reload='source ~/.zshrc' >> ~/.zshrc`;
+    await $`echo alias reload="source ~/.zshrc" >> ~/.zshrc`;
     console.log(
       chalk.green("✅ Oh My Zsh installed. zsh is now default shell.")
     );
