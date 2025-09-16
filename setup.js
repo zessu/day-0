@@ -460,12 +460,29 @@ if (!ffmpegPath) {
   console.log(chalk.yellow("ffmpeg already installed"));
 }
 
+// install imagemagick
+const magickPath = await which("magick", { nothrow: true });
+if (!magickPath) {
+  try {
+    console.log(chalk.blue("Installing Imagemagick"));
+    await $`sudo apt install 7zip poppler-utils fd-find imagemagick -y`;
+    console.log(chalk.green("Imagemagick installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing Imagemagick"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("Imagemagick already installed"));
+}
+
 // install yazi
 const yaziPath = await which("yazi", { nothrow: true });
-if (!ffmpegPath) {
+if (!yaziPath) {
   try {
     console.log(chalk.blue("Installing yazi"));
-    await $`sudo apt install 7zip poppler-utils fd-find imagemagick -y`;
+    await $`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`;
+    await $`rustup update`;
+    await $`cargo install --force yazi-build`;
     console.log(chalk.green("yazi installed"));
   } catch (error) {
     console.error(chalk.red("error installing yazi"));
