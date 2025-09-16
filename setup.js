@@ -27,13 +27,19 @@ if (!buildEssentials) {
 }
 
 // Install Oh My Zsh and set as default shell
-const zshPath = await which("zsh", { nothrow: true });
+const zshPath = await which("zssh", { nothrow: true });
 if (!zshPath) {
   try {
     console.log(chalk.blue("Installing oh-my-zish"));
+    await $`sudo apt install zsh-autosuggestions zsh-syntax-highlighting zsh`;
     await $`sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended`;
     await $`sudo chsh -s $(which zsh) $USER`;
     await $`echo alias reload="source ~/.zshrc" >> ~/.zshrc`;
+    await $`git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM/plugins/zsh-autosuggestions`;
+    await $`git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting`;
+    const zshCustom = `${ZSH_CUSTOM}:-${$HOME}/.oh-my-zish/custom`;
+    await $`git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git '${zshCustom}'/plugins/fast-syntax-highlighting`;
+    await $`git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM/plugins/zsh-autocomplete`;
     console.log(
       chalk.green("✅ Oh My Zsh installed. zsh is now default shell.")
     );
@@ -516,6 +522,11 @@ console.log(chalk.blue("run the following commands to finish install"));
 console.log(chalk.blue("1. source ~/.zshrc"));
 console.log(chalk.blue("w. sudo apt update"));
 console.log(chalk.blue("3. sudo apt upgrade"));
+console.log(
+  chalk.blue(
+    "4. add plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete) to ~/.zshrc"
+  )
+);
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
