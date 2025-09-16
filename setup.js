@@ -104,7 +104,6 @@ if (!zshPath) {
     await $`mkdir -p '${zshCustom}/plugins'`;
 
     await $`git clone https://github.com/zsh-users/zsh-autosuggestions.git '${zshCustom}/plugins/zsh-autosuggestions'`;
-    await $`git clone https://github.com/zsh-users/zsh-syntax-highlighting.git '${zshCustom}/plugins/zsh-syntax-highlighting'`;
     await $`git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git '${zshCustom}/plugins/zsh-autocomplete'`;
     await $`git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git '${zshCustom}/plugins/fast-syntax-highlighting'`;
 
@@ -644,7 +643,7 @@ if (isDebian) {
 }
 console.log(
   chalk.blue(
-    "3️⃣  Add to ~/.zshrc: plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete)"
+    "3️⃣  Add to ~/.zshrc: plugins=(git zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete)"
   )
 );
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
