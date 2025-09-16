@@ -415,7 +415,7 @@ if (!btopPath) {
 }
 
 // install zoxide
-const zoxiedPath = await which("z", { nothrow: true });
+const zoxiedPath = await which("zoxide", { nothrow: true });
 if (!zoxiedPath) {
   try {
     console.log(chalk.blue("Installing zoxide"));
@@ -427,7 +427,22 @@ if (!zoxiedPath) {
     throw error;
   }
 } else {
-  console.log(chalk.yellow("btop already installed"));
+  console.log(chalk.yellow("z already installed"));
+}
+
+// install jq
+const jqPath = await which("jq", { nothrow: true });
+if (!jqPath) {
+  try {
+    console.log(chalk.blue("Installing jq"));
+    await $`sudo apt install jq -y`;
+    console.log(chalk.green("jq installed"));
+  } catch (error) {
+    console.error(chalk.red("error installing zojqxide"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("jq already installed"));
 }
 
 console.log(chalk.green("Everything has been installed successfully"));
