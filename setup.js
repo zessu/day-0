@@ -607,7 +607,7 @@ if (!yaziPath) {
       await $`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`;
     }
     await $`rustup update`;
-    await $`cargo install --force yazi`;
+    await $`cargo install --force yazi-build`;
     console.log(chalk.green("✅ Yazi installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing Yazi"));
