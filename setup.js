@@ -142,7 +142,7 @@ if (!goPath) {
     console.log(chalk.blue("🐹 Installing Go lang"));
     await $`wget https://dl.google.com/go/go1.25.1.linux-amd64.tar.gz`;
     await $`sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.25.1.linux-amd64.tar.gz`;
-    await $`rm go1.25.1.linux-amd64.tar.gz`;
+    await $`rm -rf go1.25.1.linux-amd64.tar.gz`;
     await $`echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc`;
     console.log(chalk.green("✅ Go installed"));
   } catch (error) {
@@ -223,7 +223,11 @@ if (!dockerPath) {
 
       const { stdout: arch } = await $`dpkg --print-architecture`;
       const { stdout: codename } = await $`lsb_release -cs`;
-      const repoLine = `deb [arch=${arch.trim()} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian ${codename.trim()} stable`;
+      if (isDebian) {
+        const repoLine = `deb [arch=${arch.trim()} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable`;
+      } else {
+        throw new Error("set appropriate repoLine for arch");
+      }
       await $`echo ${repoLine} | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`;
       await $`sudo apt-get update`;
 
