@@ -634,6 +634,22 @@ if (!ezaPath) {
   console.log(chalk.yellow("⚠️  eza already installed"));
 }
 
+// --- Hyperfine ---
+const hyperfinePath = await which("hyperfine", { nothrow: true });
+if (!hyperfinePath) {
+  try {
+    console.log(chalk.blue("⚡ Installing hyperfine"));
+    const { cmd, args } = getPackageManagerCommand(["hyperfine"]);
+    await $`${cmd} ${args}`;
+    console.log(chalk.green("✅ hyperfine installed"));
+  } catch (error) {
+    console.error(chalk.red("❌ Error installing hyperfine"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("⚠️  hyperfine already installed"));
+}
+
 // --- FINAL MESSAGE ---
 console.log(chalk.green("🎉 Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
