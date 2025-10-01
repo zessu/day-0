@@ -60,6 +60,23 @@ $.defaults = {
 $.quiet = false;
 $.verbose = true;
 
+let defaultTerminalFile;
+
+const preferredTerminal = await question('What Terminal Do You Use? supported options zsh | bash ');
+
+switch (preferredTerminal) {
+  case "zsh":
+    defaultTerminalFile = "zshrc";
+    break;
+  case "bash":
+    defaultTerminalFile = "bashrc";
+    break;
+  default:
+    console.error(chalk.red("terminal not supported yet consider adding support"));
+    throw new Error("terminal not supported yet consider adding support");
+}
+throw new Error("existin here");
+
 // --- START INSTALLATION ---
 console.log(chalk.green("🚀 Setting up linux terminal tools"));
 
@@ -85,37 +102,39 @@ if (!buildEssentials) {
   console.log(chalk.yellow("⚠️  build essentials already installed"));
 }
 
-// --- OH MY ZSH ---
-const zshPath = await which("zsh", { nothrow: true });
-if (!zshPath) {
-  try {
-    console.log(chalk.blue("🦄 Installing oh-my-zsh"));
+// --- OH MY ZSH --- 
+if (preferredTerminal === "zsh") {
+  const zshPath = await which("zsh", { nothrow: true });
+  if (!zshPath) {
+    try {
+      console.log(chalk.blue("🦄 Installing oh-my-zsh"));
 
-    const zshPkgs = ["zsh", "zsh-autosuggestions", "zsh-syntax-highlighting"];
-    const { cmd, args } = getPackageManagerCommand(zshPkgs);
-    await $`${cmd} ${args}`;
+      const zshPkgs = ["zsh", "zsh-autosuggestions", "zsh-syntax-highlighting"];
+      const { cmd, args } = getPackageManagerCommand(zshPkgs);
+      await $`${cmd} ${args}`;
 
-    await $`sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended`;
-    await $`sudo chsh -s $(which zsh) $USER`;
-    await $`echo 'alias reload="source ~/.zshrc"' >> ~/.zshrc`;
+      await $`sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"`;
+      await $`sudo chsh -s $(which zsh) $USER`;
+      await $`echo 'alias reload="source ~/.zshrc"' >> ~/.zshrc`;
 
-    const zshCustom =
-      process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
-    await $`mkdir -p '${zshCustom}/plugins'`;
+      const zshCustom =
+        process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
+      await $`mkdir -p '${zshCustom}/plugins'`;
 
-    await $`git clone https://github.com/zsh-users/zsh-autosuggestions.git '${zshCustom}/plugins/zsh-autosuggestions'`;
-    await $`git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git '${zshCustom}/plugins/zsh-autocomplete'`;
-    await $`git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git '${zshCustom}/plugins/fast-syntax-highlighting'`;
+      await $`git clone https://github.com/zsh-users/zsh-autosuggestions.git '${zshCustom}/plugins/zsh-autosuggestions'`;
+      await $`git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git '${zshCustom}/plugins/zsh-autocomplete'`;
+      await $`git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git '${zshCustom}/plugins/fast-syntax-highlighting'`;
 
-    console.log(
-      chalk.green("✅ Oh My Zsh installed. zsh is now default shell.")
-    );
-  } catch (error) {
-    console.error(chalk.red("❌ Could not install Oh My Zsh"));
-    throw error;
+      console.log(
+        chalk.green("✅ Oh My Zsh installed. zsh is now default shell.")
+      );
+    } catch (error) {
+      console.error(chalk.red("❌ Could not install Oh My Zsh"));
+      throw error;
+    }
+  } else {
+    console.log(chalk.yellow("⚠️  oh my zsh already installed"));
   }
-} else {
-  console.log(chalk.yellow("⚠️  oh my zsh already installed"));
 }
 
 // --- NODE.JS ---
@@ -143,7 +162,7 @@ if (!goPath) {
     await $`wget https://dl.google.com/go/go1.25.1.linux-amd64.tar.gz`;
     await $`sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.25.1.linux-amd64.tar.gz`;
     await $`rm -rf go1.25.1.linux-amd64.tar.gz`;
-    await $`echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc`;
+    await $`echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.${defaultTerminalFile}`;
     console.log(chalk.green("✅ Go installed"));
   } catch (error) {
     console.error(chalk.red("❌ Could not install Go"));
@@ -163,7 +182,7 @@ if (!zigPath) {
     await $`mv zig-x86_64-linux-0.16.0-dev.233+a0ec4e270 zig`;
     await $`sudo mv zig /usr/local/zig`;
     await $`sudo rm -rf zig.tar.xz`;
-    await $`echo 'export PATH=/usr/local/zig:$PATH' >> ~/.zshrc`;
+    await $`echo 'export PATH=/usr/local/zig:$PATH' >> ~/.${defaultTerminalFile}`;
     console.log(chalk.green("✅ Zig installed"));
   } catch (error) {
     console.error(chalk.red("❌ Could not install Zig"));
@@ -288,7 +307,7 @@ if (!nvimPath) {
       await $`wget -O nvim-linux-x86_64.tar.gz https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz`;
       await $`sudo rm -rf /opt/nvim`;
       await $`sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz`;
-      await $`echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >> ~/.zshrc`;
+      await $`echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >> ~/.${defaultTerminalFile}`;
       await $`rm -rf nvim-linux-x86_64.tar.gz`;
     }
 
@@ -302,17 +321,19 @@ if (!nvimPath) {
 }
 
 // --- POWERLEVEL10K ---
-const zshCustomDir =
-  process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
-const powerlevel10kPath = `${zshCustomDir}/themes/powerlevel10k`;
+if (preferredTerminal === "zsh") {
+  const zshCustomDir =
+    process.env.ZSH_CUSTOM || `${process.env.HOME}/.oh-my-zsh/custom`;
+  const powerlevel10kPath = `${zshCustomDir}/themes/powerlevel10k`;
 
-if (!fs.existsSync(powerlevel10kPath)) {
-  console.log(chalk.blue("🎨 Installing Powerlevel10k theme..."));
-  await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git '${powerlevel10kPath}'`;
-  await $`echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> ~/.zshrc`;
-  console.log(chalk.green("✅ Powerlevel10k installed"));
-} else {
-  console.log(chalk.yellow("⚠️  Powerlevel10k already installed"));
+  if (!fs.existsSync(powerlevel10kPath)) {
+    console.log(chalk.blue("🎨 Installing Powerlevel10k theme..."));
+    await $`git clone --depth=1 https://github.com/romkatv/powerlevel10k.git '${powerlevel10kPath}'`;
+    await $`echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> ~/.zshrc`;
+    console.log(chalk.green("✅ Powerlevel10k installed"));
+  } else {
+    console.log(chalk.yellow("⚠️  Powerlevel10k already installed"));
+  }
 }
 
 // --- RIPGREP ---
@@ -332,23 +353,23 @@ if (!rgPath) {
 }
 
 // --- NVCHAD ---
-const nvchadConfigPath = `${process.env.HOME}/.config/nvim`;
-if (!fs.existsSync(nvchadConfigPath)) {
-  try {
-    console.log(chalk.blue("⚡ Installing NvChad"));
-    await $`rm -rf ~/.config/nvim ~/.local/state/nvim ~/.local/share/nvim`;
-    await $`git clone https://github.com/NvChad/starter ~/.config/nvim`;
-    // Note: Running `nvim` here will hang — better to instruct user to run it manually
-    console.log(
-      chalk.green("✅ NvChad config installed. Run 'nvim' to complete setup.")
-    );
-  } catch (error) {
-    console.error(chalk.red("❌ Error installing NvChad"));
-    throw error;
-  }
-} else {
-  console.log(chalk.yellow("⚠️  NvChad already installed"));
-}
+//const nvchadConfigPath = `${process.env.HOME}/.config/nvim`;
+//if (!fs.existsSync(nvchadConfigPath)) {
+//  try {
+//    console.log(chalk.blue("⚡ Installing NvChad"));
+//    await $`rm -rf ~/.config/nvim ~/.local/state/nvim ~/.local/share/nvim`;
+//    await $`git clone https://github.com/NvChad/starter ~/.config/nvim`;
+//    // Note: Running `nvim` here will hang — better to instruct user to run it manually
+//    console.log(
+//      chalk.green("✅ NvChad config installed. Run 'nvim' to complete setup.")
+//    );
+//  } catch (error) {
+//    console.error(chalk.red("❌ Error installing NvChad"));
+//    throw error;
+//  }
+//} else {
+//  console.log(chalk.yellow("⚠️  NvChad already installed"));
+//:which}
 
 // --- TLDR ---
 const tldrPath = await which("tldr", { nothrow: true });
@@ -416,10 +437,10 @@ if (!fzfPath) {
     console.log(chalk.blue("🔎 Installing fzf"));
     const { cmd, args } = getPackageManagerCommand(["fzf"]);
     await $`${cmd} ${args}`;
-    await $`echo 'source <(fzf --zsh)' >> ~/.zshrc`;
-    await $`echo 'export FZF_DEFAULT_COMMAND="fd --type f --color=always"' >> ~/.zshrc`;
+    await $`echo 'source <(fzf --zsh)' >> ~/.${defaultTerminalFile}`;
+    await $`echo 'export FZF_DEFAULT_COMMAND="fd --type f --color=always"' >> ~/.${defaultTerminalFile}`;
     const fzfOptions = `export FZF_DEFAULT_OPTS="--style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"\n`;
-    fs.appendFileSync(process.env.HOME + "/.zshrc", fzfOptions);
+    fs.appendFileSync(process.env.HOME + `/.${defaultTerminalFile}`, fzfOptions);
     console.log(chalk.green("✅ fzf installed"));
   } catch (error) {
     console.error(
@@ -535,7 +556,7 @@ if (!zoxidePath) {
   try {
     console.log(chalk.blue("🌀 Installing zoxide"));
     await $`curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh`;
-    await $`echo 'eval "$(zoxide init zsh)"' >> ~/.zshrc`;
+    await $`echo 'eval "$(zoxide init zsh)"' >> ~/.${defaultTerminalFile}`;
     console.log(chalk.green("✅ zoxide installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing zoxide"));
@@ -624,7 +645,7 @@ if (!ezaPath) {
     console.log(chalk.blue("📋 Installing eza"));
     const { cmd, args } = getPackageManagerCommand(["eza"]);
     await $`${cmd} ${args}`;
-    await $`echo 'alias ls="eza -1la"' >> ~/.zshrc`;
+    await $`echo 'alias ls="eza -1la"' >> ~/.${defaultTerminalFile}`;
     console.log(chalk.green("✅ eza installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing eza"));
@@ -655,15 +676,17 @@ console.log(chalk.green("🎉 Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
 console.log(chalk.cyanBright("✨ PLEASE CLOSE AND REOPEN YOUR TERMINAL!"));
 console.log(chalk.blue("Then run:"));
-console.log(chalk.blue("1️⃣  source ~/.zshrc"));
+console.log(chalk.blue(`1️⃣  source ~/.${defaultTerminalFile}`));
 if (isDebian) {
   console.log(chalk.blue("2️⃣  sudo apt update && sudo apt upgrade"));
 } else if (isArch) {
   console.log(chalk.blue("2️⃣  sudo pacman -Syu"));
 }
-console.log(
-  chalk.blue(
-    "3️⃣  Add to ~/.zshrc: plugins=(git zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete)"
-  )
-);
+if (preferredTerminal === "zsh") {
+  console.log(
+    chalk.blue(
+      "3️⃣  Add to ~/.zshrc: plugins=(git zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete)"
+    )
+  );
+}
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
