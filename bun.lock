@@ -3,11 +3,11 @@
   "workspaces": {
     "": {
       "dependencies": {
-        "zx": "^8.8.1",
+        "zx": "^8.8.4",
       },
     },
   },
   "packages": {
-    "zx": ["zx@8.8.1", "", { "bin": { "zx": "build/cli.js" } }, "sha512-qvsKBnvWHstHKCluKPlEgI/D3+mdiQyMoSSeFR8IX/aXzWIas5A297KxKgPJhuPXdrR6ma0Jzx43+GQ/8sqbrw=="],
+    "zx": ["zx@8.8.4", "", { "bin": { "zx": "build/cli.js" } }, "sha512-44GcD+ZlM/v1OQtbwnSxLPcoE1ZEUICmR+RSbJZLAqfIixNLuMjLyh0DcS75OyfJ/sWYAwCWDmDvJ4hdnANAPQ=="],
   }
 }
