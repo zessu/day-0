@@ -61,21 +61,23 @@ $.quiet = false;
 $.verbose = true;
 
 let defaultTerminalFile;
+let userSelection;
 
 const preferredTerminal = await question('What Terminal Do You Use? supported options zsh | bash ');
 
 switch (preferredTerminal) {
   case "zsh":
     defaultTerminalFile = "zshrc";
+    userSelection = "zsh";
     break;
   case "bash":
     defaultTerminalFile = "bashrc";
+    userSelection = "bash"
     break;
   default:
     console.error(chalk.red("terminal not supported yet consider adding support"));
     throw new Error("terminal not supported yet consider adding support");
 }
-throw new Error("existin here");
 
 // --- START INSTALLATION ---
 console.log(chalk.green("🚀 Setting up linux terminal tools"));
@@ -388,7 +390,7 @@ if (!tldrPath) {
 
 // --- NVM ---
 console.log(chalk.blue("📦 Installing nvm (Node Version Manager)"));
-await $`PROFILE=~/.zshrc && wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`;
+await $`PROFILE=~/.${defaultTerminalFile} && wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash`;
 console.log(chalk.green("✅ Node Version Manager installed"));
 
 // --- GEMINI CLI ---
@@ -556,7 +558,7 @@ if (!zoxidePath) {
   try {
     console.log(chalk.blue("🌀 Installing zoxide"));
     await $`curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh`;
-    await $`echo 'eval "$(zoxide init zsh)"' >> ~/.${defaultTerminalFile}`;
+    await $`echo 'eval "$(zoxide init ${userSelection})"' >> ~/.${defaultTerminalFile}`;
     console.log(chalk.green("✅ zoxide installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing zoxide"));
@@ -623,12 +625,9 @@ if (!yaziPath) {
   try {
     console.log(chalk.blue("📁 Installing Yazi"));
     // Ensure rust is installed first
-    if (!(await which("cargo", { nothrow: true }))) {
-      console.log(chalk.yellow("⚠️  Installing Rust first..."));
-      await $`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`;
-    }
-    await $`rustup update`;
     await $`cargo install --force yazi-build`;
+    const { cmd, args } = getPackageManagerCommand(["resvg"]);
+    await $`${cmd} ${args}`
     console.log(chalk.green("✅ Yazi installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing Yazi"));
