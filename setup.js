@@ -85,6 +85,8 @@ console.log(chalk.green("🚀 Setting up linux terminal tools"));
 // Initial update for Debian
 if (isDebian) {
   await $`sudo apt-get update`;
+} else if (isArch) {
+  await $`sudo pacman -Syu`;
 }
 
 // --- BUILD ESSENTIALS ---
@@ -104,14 +106,14 @@ if (!buildEssentials) {
   console.log(chalk.yellow("⚠️  build essentials already installed"));
 }
 
-// --- OH MY ZSH --- 
+//  install ohmyzsh, zsh-autocomplete, zsh-autosuggestions, fast-syntax-highlighting
 if (preferredTerminal === "zsh") {
   const zshPath = await which("zsh", { nothrow: true });
   if (!zshPath) {
     try {
       console.log(chalk.blue("🦄 Installing oh-my-zsh"));
 
-      const zshPkgs = ["zsh", "zsh-autosuggestions", "zsh-syntax-highlighting"];
+      const zshPkgs = ["zsh", "zsh-autosuggestions"];
       const { cmd, args } = getPackageManagerCommand(zshPkgs);
       await $`${cmd} ${args}`;
 
@@ -138,6 +140,20 @@ if (preferredTerminal === "zsh") {
     console.log(chalk.yellow("⚠️  oh my zsh already installed"));
   }
 }
+
+// install oh-my-bash and ble.sh 
+if (preferredTerminal === "bash") {
+  // install oh-my-bash
+  if (!$`ls ~/.bashrc`) {
+    await $`bash - c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"`;
+  }
+  const blePath = await which("ble-update");
+  // install ble.sh has zsh-autosuggestions
+  if (!blePath) {
+    await $`yay -S blesh-git`;
+  }
+}
+
 
 // --- NODE.JS ---
 const nodePath = await which("node", { nothrow: true });
