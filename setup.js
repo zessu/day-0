@@ -87,6 +87,8 @@ if (isDebian) {
   await $`sudo apt-get update`;
 } else if (isArch) {
   await $`sudo pacman -Syu`;
+} else {
+  throw new Error("distribution not supported");
 }
 
 // --- BUILD ESSENTIALS ---
