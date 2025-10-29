@@ -688,6 +688,19 @@ if (!hyperfinePath) {
   console.log(chalk.yellow("⚠️  hyperfine already installed"));
 }
 
+const dyskPath = await which("dysk", { nothrow: true });
+if (!dyskPath) {
+  try {
+    console.log(chalk.blue("⚡Installing dysk"));
+    await $`cargo install --locked dysk`;
+    console.log(chalk.yellow("dysk installed"));
+  } catch (error) {
+
+  }
+} else {
+  console.log("⚠️ dysk has already been installed;")
+}
+
 // --- FINAL MESSAGE ---
 console.log(chalk.green("🎉 Everything has been installed successfully"));
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
