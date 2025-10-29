@@ -149,7 +149,7 @@ if (preferredTerminal === "bash") {
   if (!$`ls ~/.bashrc`) {
     await $`bash - c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"`;
   }
-  const blePath = await which("ble-update");
+  const blePath = await which("ble-update", { nothrow: true });
   // install ble.sh has zsh-autosuggestions
   if (!blePath) {
     await $`yay -S blesh-git`;
