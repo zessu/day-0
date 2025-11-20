@@ -460,7 +460,7 @@ if (fzfPath) {
     //TODO: the next command changes depending on whether we use bash/zsh/fish 
     // change this, doc link https://github.com/junegunn/fzf
     await $`echo 'source <(fzf --zsh)' >> ~/.${defaultTerminalFile}`;
-    await $`echo 'export FZF_DEFAULT_COMMAND="fd --color=always"' >> ~/.${defaultTerminalFile}`;
+    await $`echo 'export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude .git --color=always"' >> ~/.${defaultTerminalFile}`;
     const fzfOptions = `export FZF_DEFAULT_OPTS="--ansi --style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"\n`;
     fs.appendFileSync(process.env.HOME + `/.${defaultTerminalFile}`, fzfOptions);
     console.log(chalk.green("✅ fzf installed"));
