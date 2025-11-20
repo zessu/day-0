@@ -452,11 +452,13 @@ if (!fdPath) {
 
 // --- FZF ---
 const fzfPath = await which("fzf", { nothrow: true });
-if (!fzfPath) {
+if (fzfPath) {
   try {
     console.log(chalk.blue("🔎 Installing fzf"));
     const { cmd, args } = getPackageManagerCommand(["fzf"]);
     await $`${cmd} ${args}`;
+    //TODO: the next command changes depending on whether we use bash/zsh/fish 
+    // change this, doc link https://github.com/junegunn/fzf
     await $`echo 'source <(fzf --zsh)' >> ~/.${defaultTerminalFile}`;
     await $`echo 'export FZF_DEFAULT_COMMAND="fd --type f --color=always"' >> ~/.${defaultTerminalFile}`;
     const fzfOptions = `export FZF_DEFAULT_OPTS="--style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"\n`;
