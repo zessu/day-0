@@ -372,25 +372,6 @@ if (!rgPath) {
   console.log(chalk.yellow("⚠️  rg already installed"));
 }
 
-// --- NVCHAD ---
-//const nvchadConfigPath = `${process.env.HOME}/.config/nvim`;
-//if (!fs.existsSync(nvchadConfigPath)) {
-//  try {
-//    console.log(chalk.blue("⚡ Installing NvChad"));
-//    await $`rm -rf ~/.config/nvim ~/.local/state/nvim ~/.local/share/nvim`;
-//    await $`git clone https://github.com/NvChad/starter ~/.config/nvim`;
-//    // Note: Running `nvim` here will hang — better to instruct user to run it manually
-//    console.log(
-//      chalk.green("✅ NvChad config installed. Run 'nvim' to complete setup.")
-//    );
-//  } catch (error) {
-//    console.error(chalk.red("❌ Error installing NvChad"));
-//    throw error;
-//  }
-//} else {
-//  console.log(chalk.yellow("⚠️  NvChad already installed"));
-//:which}
-
 // --- TLDR ---
 const tldrPath = await which("tldr", { nothrow: true });
 if (!tldrPath) {
