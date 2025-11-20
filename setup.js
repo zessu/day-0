@@ -528,6 +528,7 @@ if (!harlequinPath) {
   try {
     console.log(chalk.blue("📊 Installing Harlequin"));
     await $`uv tool install harlequin`;
+    await $`uv tool install 'harlequin[postgres,mysql]'`;
     console.log(chalk.green("✅ Harlequin installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing Harlequin"));
