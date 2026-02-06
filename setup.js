@@ -15,7 +15,7 @@ async function detectOS() {
       return "debian";
     } else {
       throw new Error(
-        "Unsupported distribution. Only Debian and Arch are supported."
+        "Unsupported distribution. Only Debian and Arch are supported.",
       );
     }
   } catch (error) {
@@ -63,7 +63,9 @@ $.verbose = true;
 let defaultTerminalFile;
 let userSelection;
 
-const preferredTerminal = await question('What Terminal Do You Use? supported options zsh | bash ');
+const preferredTerminal = await question(
+  "What Terminal Do You Use? supported options zsh | bash ",
+);
 
 switch (preferredTerminal) {
   case "zsh":
@@ -72,10 +74,12 @@ switch (preferredTerminal) {
     break;
   case "bash":
     defaultTerminalFile = "bashrc";
-    userSelection = "bash"
+    userSelection = "bash";
     break;
   default:
-    console.error(chalk.red("terminal not supported yet consider adding support"));
+    console.error(
+      chalk.red("terminal not supported yet consider adding support"),
+    );
     throw new Error("terminal not supported yet consider adding support");
 }
 
@@ -132,7 +136,7 @@ if (preferredTerminal === "zsh") {
       await $`git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git '${zshCustom}/plugins/fast-syntax-highlighting'`;
 
       console.log(
-        chalk.green("✅ Oh My Zsh installed. zsh is now default shell.")
+        chalk.green("✅ Oh My Zsh installed. zsh is now default shell."),
       );
     } catch (error) {
       console.error(chalk.red("❌ Could not install Oh My Zsh"));
@@ -143,7 +147,7 @@ if (preferredTerminal === "zsh") {
   }
 }
 
-// install oh-my-bash and ble.sh 
+// install oh-my-bash and ble.sh
 if (preferredTerminal === "bash") {
   // install oh-my-bash
   if (!$`ls ~/.bashrc`) {
@@ -155,7 +159,6 @@ if (preferredTerminal === "bash") {
     await $`yay -S blesh-git`;
   }
 }
-
 
 // --- NODE.JS ---
 const nodePath = await which("node", { nothrow: true });
@@ -290,7 +293,7 @@ if (!dockerPath) {
   } catch (error) {
     console.log(
       chalk.red("❌ Error installing Docker:"),
-      error.stderr || error.message
+      error.stderr || error.message,
     );
     throw error;
   }
@@ -422,8 +425,8 @@ if (!fdPath) {
   } catch (error) {
     console.error(
       chalk.red(
-        "❌ Error installing fd — view docs: https://github.com/sharkdp/fd"
-      )
+        "❌ Error installing fd — view docs: https://github.com/sharkdp/fd",
+      ),
     );
     throw error;
   }
@@ -438,18 +441,21 @@ if (fzfPath) {
     console.log(chalk.blue("🔎 Installing fzf"));
     const { cmd, args } = getPackageManagerCommand(["fzf"]);
     await $`${cmd} ${args}`;
-    //TODO: the next command changes depending on whether we use bash/zsh/fish 
+    //TODO: the next command changes depending on whether we use bash/zsh/fish
     // change this, doc link https://github.com/junegunn/fzf
     await $`echo 'source <(fzf --zsh)' >> ~/.${defaultTerminalFile}`;
     await $`echo 'export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude .git --color=always"' >> ~/.${defaultTerminalFile}`;
     const fzfOptions = `export FZF_DEFAULT_OPTS="--ansi --style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"\n`;
-    fs.appendFileSync(process.env.HOME + `/.${defaultTerminalFile}`, fzfOptions);
+    fs.appendFileSync(
+      process.env.HOME + `/.${defaultTerminalFile}`,
+      fzfOptions,
+    );
     console.log(chalk.green("✅ fzf installed"));
   } catch (error) {
     console.error(
       chalk.red(
-        "❌ Error installing fzf — view docs: https://github.com/junegunn/fzf#installation"
-      )
+        "❌ Error installing fzf — view docs: https://github.com/junegunn/fzf#installation",
+      ),
     );
     throw error;
   }
@@ -629,7 +635,7 @@ if (!yaziPath) {
     // Ensure rust is installed first
     await $`cargo install --force yazi-build`;
     const { cmd, args } = getPackageManagerCommand(["resvg"]);
-    await $`${cmd} ${args}`
+    await $`${cmd} ${args}`;
     console.log(chalk.green("✅ Yazi installed"));
   } catch (error) {
     console.error(chalk.red("❌ Error installing Yazi"));
@@ -678,12 +684,110 @@ if (!dyskPath) {
     console.log(chalk.blue("⚡Installing dysk"));
     await $`cargo install --locked dysk`;
     console.log(chalk.yellow("dysk installed"));
-  } catch (error) {
+  } catch (error) {}
+} else {
+  console.log("⚠️ dysk has already been installed;");
+}
 
+// --- YT-DLP ---
+const ytDlpPath = await which("yt-dlp", { nothrow: true });
+if (!ytDlpPath) {
+  try {
+    console.log(chalk.blue("📺 Installing yt-dlp"));
+    const { cmd, args } = getPackageManagerCommand(["yt-dlp"]);
+    await $`${cmd} ${args}`;
+    console.log(chalk.green("✅ yt-dlp installed"));
+  } catch (error) {
+    console.error(chalk.red("❌ Error installing yt-dlp"));
+    throw error;
   }
 } else {
-  console.log("⚠️ dysk has already been installed;")
+  console.log(chalk.yellow("⚠️  yt-dlp already installed"));
 }
+
+// --- YOUTUBE DOWNLOAD FUNCTIONS ---
+console.log(chalk.blue("📺 Adding YouTube download functions"));
+
+const youtubeFunctions = `
+# ============================================================================
+# YouTube Download Functions
+# ============================================================================
+
+downloadplaylist() {
+  # Check if yt-dlp is installed
+  if ! command -v yt-dlp &>/dev/null; then
+    echo "Error: 'yt-dlp' is not installed or not in your PATH." >&2
+    echo "Please install yt-dlp to use this function." >&2
+    return 1
+  fi
+
+  # Check for a provided URL argument
+  if [ -z "$1" ]; then
+    echo "Usage: downloadplaylist \\"<PLAYLIST_URL>\\""
+    echo "  e.g., downloadplaylist \\"https://www.youtube.com/playlist?list=...\\""
+    return 1
+  fi
+
+  local playlist_url="$1"
+  local output_template="%(playlist_index)s - %(title)s.%(ext)s"
+
+  echo "Starting download for playlist: $playlist_url"
+  echo "Files will be saved as: $output_template"
+
+  # Run yt-dlp with the specified output format
+  # The -o option sets the output template.
+  # The --yes-playlist flag is generally good practice to explicitly confirm it's a playlist.
+  yt-dlp -i --download-archive downloaded.txt -o "$output_template" --yes-playlist "$playlist_url"
+
+  local exit_status=$?
+
+  if [ $exit_status -eq 0 ]; then
+    echo "✅ Playlist download finished successfully."
+  else
+    echo "❌ Playlist download failed with exit code $exit_status." >&2
+  fi
+
+  return $exit_status
+}
+
+download720video() {
+  # Check if yt-dlp is installed
+  if ! command -v yt-dlp &>/dev/null; then
+    echo "Error: 'yt-dlp' is not installed or not in your PATH." >&2
+    echo "Please install yt-dlp to use this function." >&2
+    return 1
+  fi
+
+  # Check for a provided URL argument
+  if [ -z "$1" ]; then
+    echo "Usage: download720video \\"<VIDEO_URL>\\""
+    echo "  e.g., download720video \\"https://youtu.be/W4EwfEU8CGA\\""
+    return 1
+  fi
+
+  local video_url="$1"
+  local output_template="%(title)s.%(ext)s"
+
+  echo "Starting download for video: $video_url"
+  echo "Quality: 720p (or best available up to 720p)"
+
+  # Run yt-dlp with format selection for 720p
+  yt-dlp -f "best[height<=720]" -o "$output_template" "$video_url"
+
+  local exit_status=$?
+
+  if [ $exit_status -eq 0 ]; then
+    echo "✅ Video download finished successfully."
+  else
+    echo "❌ Video download failed with exit code $exit_status." >&2
+  fi
+
+  return $exit_status
+}
+`;
+
+fs.appendFileSync(process.env.HOME + `/.${defaultTerminalFile}`, youtubeFunctions);
+console.log(chalk.green("✅ YouTube download functions added"));
 
 // --- FINAL MESSAGE ---
 console.log(chalk.green("🎉 Everything has been installed successfully"));
@@ -699,8 +803,8 @@ if (isDebian) {
 if (preferredTerminal === "zsh") {
   console.log(
     chalk.blue(
-      "3️⃣  Add to ~/.zshrc: plugins=(git zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete)"
-    )
+      "3️⃣  Add to ~/.zshrc: plugins=(git zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete)",
+    ),
   );
 }
 console.log(chalk.yellow(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"));
