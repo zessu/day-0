@@ -689,6 +689,21 @@ if (!dyskPath) {
   console.log("⚠️ dysk has already been installed;");
 }
 
+// --- XH ---
+const xhPath = await which("xh", { nothrow: true });
+if (!xhPath) {
+  try {
+    console.log(chalk.blue("🌐 Installing xh"));
+    await $`curl -sfL https://raw.githubusercontent.com/ducaale/xh/master/install.sh | sh`;
+    console.log(chalk.green("✅ xh installed"));
+  } catch (error) {
+    console.error(chalk.red("❌ Error installing xh"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("⚠️  xh already installed"));
+}
+
 // --- YT-DLP ---
 const ytDlpPath = await which("yt-dlp", { nothrow: true });
 if (!ytDlpPath) {
