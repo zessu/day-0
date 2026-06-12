@@ -720,6 +720,21 @@ if (!ytDlpPath) {
   console.log(chalk.yellow("⚠️  yt-dlp already installed"));
 }
 
+// --- ATUIN ---
+const atuinPath = await which("atuin", { nothrow: true });
+if (!atuinPath) {
+  try {
+    console.log(chalk.blue("📜 Installing atuin"));
+    await $`curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive`;
+    console.log(chalk.green("✅ atuin installed"));
+  } catch (error) {
+    console.error(chalk.red("❌ Error installing atuin"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("⚠️  atuin already installed"));
+}
+
 // --- YOUTUBE DOWNLOAD FUNCTIONS ---
 console.log(chalk.blue("📺 Adding YouTube download functions"));
 
