@@ -230,6 +230,21 @@ if (!rustPath) {
   console.log(chalk.yellow("⚠️  Rust is already installed"));
 }
 
+// --- NIX ---
+const nixPath = await which("nix", { nothrow: true });
+if (!nixPath) {
+  try {
+    console.log(chalk.blue("❄️ Installing Nix"));
+    await $`curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon`;
+    console.log(chalk.green("✅ Nix installed"));
+  } catch (error) {
+    console.error(chalk.red("❌ Error installing Nix"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("⚠️  Nix is already installed"));
+}
+
 // --- LAZYGIT ---
 const lazyGitPath = await which("lazygit", { nothrow: true });
 if (!lazyGitPath) {
