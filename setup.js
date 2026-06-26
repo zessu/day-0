@@ -423,6 +423,21 @@ if (!geminiPath) {
   console.log(chalk.yellow("⚠️  Gemini CLI already installed"));
 }
 
+// --- HUNK ---
+const hunkPath = await which("hunk", { nothrow: true });
+if (!hunkPath) {
+  try {
+    console.log(chalk.blue("📄 Installing Hunk"));
+    await $`bun add -g hunkdiff`;
+    console.log(chalk.green("✅ Hunk installed"));
+  } catch (error) {
+    console.error(chalk.red("❌ Error installing Hunk"));
+    throw error;
+  }
+} else {
+  console.log(chalk.yellow("⚠️  Hunk already installed"));
+}
+
 // --- FD ---
 const fdPath = await which("fd", { nothrow: true });
 if (!fdPath) {
