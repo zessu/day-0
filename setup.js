@@ -1,3 +1,4 @@
+
 import fs from "fs";
 import { $, which, chalk } from "zx"; // Import `which` from zx
 
@@ -149,9 +150,8 @@ if (preferredTerminal === "zsh") {
 
 // install oh-my-bash and ble.sh
 if (preferredTerminal === "bash") {
-  // install oh-my-bash
-  if (!$`ls ~/.bashrc`) {
-    await $`bash - c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"`;
+  if (!fs.existsSync(`${process.env.HOME}/.bashrc`)) {
+    await $`bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"`;
   }
   const blePath = await which("ble-update", { nothrow: true });
   // install ble.sh has zsh-autosuggestions
@@ -280,11 +280,9 @@ if (!dockerPath) {
 
       const { stdout: arch } = await $`dpkg --print-architecture`;
       const { stdout: codename } = await $`lsb_release -cs`;
-      if (isDebian) {
-        const repoLine = `deb [arch=${arch.trim()} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable`;
-      } else {
-        throw new Error("set appropriate repoLine for arch");
-      }
+
+      const repoLine = `deb [arch=${arch.trim()} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable`;
+
       await $`echo ${repoLine} | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`;
       await $`sudo apt-get update`;
 
@@ -451,14 +449,16 @@ if (!fdPath) {
 
 // --- FZF ---
 const fzfPath = await which("fzf", { nothrow: true });
-if (fzfPath) {
+if (!fzfPath) {
   try {
     console.log(chalk.blue("🔎 Installing fzf"));
     const { cmd, args } = getPackageManagerCommand(["fzf"]);
     await $`${cmd} ${args}`;
-    //TODO: the next command changes depending on whether we use bash/zsh/fish
-    // change this, doc link https://github.com/junegunn/fzf
-    await $`echo 'source <(fzf --zsh)' >> ~/.${defaultTerminalFile}`;
+    if (userSelection === "zsh") {
+      await $`echo 'source <(fzf --zsh)' >> ~/.${defaultTerminalFile}`;
+    } else {
+      await $`echo 'eval "$(fzf --bash)"' >> ~/.${defaultTerminalFile}`;
+    }
     await $`echo 'export FZF_DEFAULT_COMMAND="fd --hidden --follow --exclude .git --color=always"' >> ~/.${defaultTerminalFile}`;
     const fzfOptions = `export FZF_DEFAULT_OPTS="--ansi --style full --preview 'bat --color=always {}' --preview-window '~3' --bind 'focus:transform-header:file --brief {}'"\n`;
     fs.appendFileSync(
@@ -647,7 +647,6 @@ const yaziPath = await which("yazi", { nothrow: true });
 if (!yaziPath) {
   try {
     console.log(chalk.blue("📁 Installing Yazi"));
-    // Ensure rust is installed first
     await $`cargo install --force yazi-build`;
     const { cmd, args } = getPackageManagerCommand(["resvg"]);
     await $`${cmd} ${args}`;
@@ -699,7 +698,7 @@ if (!dyskPath) {
     console.log(chalk.blue("⚡Installing dysk"));
     await $`cargo install --locked dysk`;
     console.log(chalk.yellow("dysk installed"));
-  } catch (error) {}
+  } catch (error) { }
 } else {
   console.log("⚠️ dysk has already been installed;");
 }
@@ -759,14 +758,12 @@ const youtubeFunctions = `
 # ============================================================================
 
 downloadplaylist() {
-  # Check if yt-dlp is installed
   if ! command -v yt-dlp &>/dev/null; then
     echo "Error: 'yt-dlp' is not installed or not in your PATH." >&2
-    echo "Please install yt-dlp to use this function." >&2
+    echo "Please install it with: pip install yt-dlp" >&2
     return 1
   fi
 
-  # Check for a provided URL argument
   if [ -z "$1" ]; then
     echo "Usage: downloadplaylist \\"<PLAYLIST_URL>\\""
     echo "  e.g., downloadplaylist \\"https://www.youtube.com/playlist?list=...\\""
@@ -775,14 +772,16 @@ downloadplaylist() {
 
   local playlist_url="$1"
   local output_template="%(playlist_index)s - %(title)s.%(ext)s"
+  local archive_file="$HOME/.yt-dlp/downloaded.txt"
+
+  mkdir -p "$HOME/.yt-dlp"
 
   echo "Starting download for playlist: $playlist_url"
-  echo "Files will be saved as: $output_template"
 
-  # Run yt-dlp with the specified output format
-  # The -o option sets the output template.
-  # The --yes-playlist flag is generally good practice to explicitly confirm it's a playlist.
-  yt-dlp -i --download-archive downloaded.txt -o "$output_template" --yes-playlist "$playlist_url"
+  yt-dlp -i \\
+    --download-archive "$archive_file" \\
+    -o "$output_template" \\
+    "$playlist_url"
 
   local exit_status=$?
 
@@ -796,14 +795,12 @@ downloadplaylist() {
 }
 
 download720video() {
-  # Check if yt-dlp is installed
   if ! command -v yt-dlp &>/dev/null; then
     echo "Error: 'yt-dlp' is not installed or not in your PATH." >&2
-    echo "Please install yt-dlp to use this function." >&2
+    echo "Please install it with: pip install yt-dlp" >&2
     return 1
   fi
 
-  # Check for a provided URL argument
   if [ -z "$1" ]; then
     echo "Usage: download720video \\"<VIDEO_URL>\\""
     echo "  e.g., download720video \\"https://youtu.be/W4EwfEU8CGA\\""
@@ -816,8 +813,11 @@ download720video() {
   echo "Starting download for video: $video_url"
   echo "Quality: 720p (or best available up to 720p)"
 
-  # Run yt-dlp with format selection for 720p
-  yt-dlp -f "best[height<=720]" -o "$output_template" "$video_url"
+  # than a pre-muxed best[height<=720] stream; fall back to pre-muxed if needed
+  yt-dlp -f "bestvideo[height<=720]+bestaudio/best[height<=720]" \\
+    --merge-output-format mp4 \\
+    -o "$output_template" \\
+    "$video_url"
 
   local exit_status=$?
 
