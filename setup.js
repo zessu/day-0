@@ -786,6 +786,7 @@ downloadplaylist() {
   fi
 
   local playlist_url="$1"
+  playlist_url="\${playlist_url//\\\\}"
   local output_template="%(playlist_index)s - %(title)s.%(ext)s"
   local archive_file="$HOME/.yt-dlp/downloaded.txt"
 
